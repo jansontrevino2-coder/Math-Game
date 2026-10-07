@@ -163,7 +163,8 @@
 
     <div class="info">
       <div id="feedback"></div>
-      <div>Score: <span id="score">0</span></div>
+      <div>Correct: <span id="correctCount">0</span></div>
+      <div>Incorrect: <span id="incorrectCount">0</span></div>
     </div>
   </div>
 
@@ -174,11 +175,13 @@
     const helpBtn = document.getElementById('helpBtn');
     const helpBox = document.getElementById('helpBox');
     const feedbackEl = document.getElementById('feedback');
-    const scoreEl = document.getElementById('score');
+    const correctEl = document.getElementById('correctCount');
+    const incorrectEl = document.getElementById('incorrectCount');
     const warnEl = document.getElementById('warn');
 
     let currentAnswer = "";
-    let score = 0;
+    let correctCount = 0;
+    let incorrectCount = 0;
 
     helpBtn.addEventListener("click", () => {
       helpBox.style.display = helpBox.style.display === "none" ? "block" : "none";
@@ -401,13 +404,15 @@
       if (userAnswer == currentAnswer) {
         feedbackEl.textContent = "Correct!";
         feedbackEl.className = "correct";
-        score++;
+        correctCount++;
+        correctEl.textContent = correctCount;
       } else {
         feedbackEl.textContent = `Wrong! Correct answer: ${currentAnswer}`;
         feedbackEl.className = "wrong";
+        incorrectCount++;
+        incorrectEl.textContent = incorrectCount;
       }
 
-      scoreEl.textContent = score;
       setTimeout(newQuestion, 900);
     });
 
