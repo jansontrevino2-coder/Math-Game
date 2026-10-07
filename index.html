@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Math Game</title>
+  <title>Math Game (Accuracy Meter)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -159,13 +159,14 @@
       • Mixed numbers: <code>1 1/2</code><br>
       • Decimals: <code>0.5</code> (auto-converted)<br>
       • Word problems: type the final number or fraction<br>
-      • ^ means to the power of
+      • <code>^</code> means “to the power of”<br>
     </div>
 
     <div class="info">
       <div id="feedback"></div>
       <div>Correct: <span id="correctCount">0</span></div>
       <div>Incorrect: <span id="incorrectCount">0</span></div>
+      <div>Accuracy: <span id="accuracy">0%</span></div>
     </div>
   </div>
 
@@ -178,6 +179,7 @@
     const feedbackEl = document.getElementById('feedback');
     const correctEl = document.getElementById('correctCount');
     const incorrectEl = document.getElementById('incorrectCount');
+    const accuracyEl = document.getElementById('accuracy');
     const warnEl = document.getElementById('warn');
 
     let currentAnswer = "";
@@ -199,6 +201,12 @@
         }
       });
     });
+
+    function updateAccuracy() {
+      const total = correctCount + incorrectCount;
+      const percent = total === 0 ? 0 : Math.round((correctCount / total) * 100);
+      accuracyEl.textContent = percent + "%";
+    }
 
     function gcd(a, b) {
       return b === 0 ? a : gcd(b, a % b);
@@ -414,6 +422,7 @@
         incorrectEl.textContent = incorrectCount;
       }
 
+      updateAccuracy();
       setTimeout(newQuestion, 900);
     });
 
