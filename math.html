@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Math Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      margin: 0;
+      padding-top: 20px;
+    }
+
+    .settings {
+      background: #1e1e1e;
+      padding: 15px 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.6);
+      margin-bottom: 20px;
+      width: 360px;
+    }
+
+    .settings h2 {
+      margin: 0 0 10px 0;
+      font-size: 20px;
+      text-align: center;
+    }
+
+    .settings label {
+      display: block;
+      margin: 6px 0;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .game {
+      background: #1e1e1e;
+      padding: 20px 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.6);
+      text-align: center;
+      max-width: 380px;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 26px;
+    }
+
+    .question {
+      font-size: 20px;
+      margin: 15px 0;
+      line-height: 1.4;
+    }
+
+    input[type="text"] {
+      padding: 8px;
+      width: 140px;
+      border-radius: 5px;
+      border: none;
+      outline: none;
+      text-align: center;
+      font-size: 16px;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      background: #4caf50;
+      color: #fff;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #43a047;
+    }
+
+    #helpBtn {
+      background: #2196f3;
+      margin-left: 5px;
+    }
+
+    #helpBtn:hover {
+      background: #1e88e5;
+    }
+
+    .info {
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .correct {
+      color: #4caf50;
+    }
+
+    .wrong {
+      color: #ff5252;
+    }
+
+    #helpBox {
+      display: none;
+      background: #222;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-size: 14px;
+      text-align: left;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SETTINGS PANEL -->
+  <div class="settings">
+    <h2>Select Question Types</h2>
+
+    <label><input type="checkbox" class="qType" value="whole" checked> Whole Number Problems</label>
+    <label><input type="checkbox" class="qType" value="fraction" checked> Fraction Problems</label>
+    <label><input type="checkbox" class="qType" value="exponent" checked> Exponents</label>
+    <label><input type="checkbox" class="qType" value="fractionExponent" checked> Fraction Exponents</label>
+    <label><input type="checkbox" class="qType" value="multiStep" checked> Multi-Step Problems</label>
+    <label><input type="checkbox" class="qType" value="wordProblem" checked> Word Problems</label>
+  </div>
+
+  <!-- GAME PANEL -->
+  <div class="game">
+    <h1>Math Game</h1>
+    <div class="question" id="question">Loading...</div>
+
+    <input type="text" id="answer" placeholder="Answer" />
+    <br>
+
+    <button id="submitBtn">Submit</button>
+    <button id="helpBtn">Help</button>
+
+    <div id="helpBox">
+      <strong>How to type answers:</strong><br><br>
+      • Fractions: <code>3/4</code><br>
+      • Mixed numbers: <code>1 1/2</code><br>
+      • Whole numbers: <code>5</code><br>
+      • Decimals: <code>0.5</code> (will be turned into a fraction)<br>
+      • Word problems: type the final number or fraction<br>
+    </div>
+
+    <div class="info">
+      <div id="feedback"></div>
+      <div>Score: <span id="score">0</span></div>
+    </div>
+  </div>
+
+  <script>
+    const questionEl = document.getElementById('question');
+    const answerEl = document.getElementById('answer');
+    const submitBtn = document.getElementById('submitBtn');
+    const helpBtn = document.getElementById('helpBtn');
+    const helpBox = document.getElementById('helpBox');
+    const feedbackEl = document.getElementById('feedback');
+    const scoreEl = document.getElementById('score');
+
+    let currentAnswer = "";
+    let score = 0;
+
+    helpBtn.addEventListener("click", () => {
+      helpBox.style.display = helpBox.style.display === "none" ? "block" : "none";
+    });
+
+    function gcd(a, b) {
+      return b === 0 ? a : gcd(b, a % b);
+    }
+
+    function simplifyFraction(n, d) {
+      const g = gcd(Math.abs(n), Math.abs(d));
+      n /= g;
+      d /= g;
+
+      if (d < 0) { n = -n; d = -d; }
+
+      if (Math.abs(n) > d) {
+        const whole = Math.trunc(n / d);
+        const rem = Math.abs(n % d);
+        return rem === 0 ? `${whole}` : `${whole} ${rem}/${d}`;
+      }
+
+      return `${n}/${d}`;
+    }
+
+    function exponentFraction(n, d, exp) {
+      return simplifyFraction(n ** exp, d ** exp);
+    }
+
+    function randomFraction() {
+      const n = Math.floor(Math.random() * 8) + 1;
+      const d = Math.floor(Math.random() * 8) + 1;
+      return { n, d };
+    }
+
+    // CLEAN evalExpression: avoids ugly floating-point answers
+    function evalExpression(expr) {
+      expr = expr.replace(/(\d+)\/(\d+)/g, "($1/$2)");
+      expr = expr.replace(/(\d+)\^(\d+)/g, "Math.pow($1,$2)");
+      expr = expr.replace(/\((\d+)\/(\d+)\)\^(\d+)/g, "Math.pow($1/$2,$3)");
+
+      let value = eval(expr);
+
+      value = Math.round(value * 1e10) / 1e10;
+
+      if (Number.isInteger(value)) return value;
+
+      let str = value.toString();
+
+      if (str.includes(".")) {
+        const decimals = str.split(".")[1].length;
+        const denominator = Math.pow(10, decimals);
+        const numerator = Math.round(value * denominator);
+        return simplifyFraction(numerator, denominator);
+      }
+
+      return value;
+    }
+
+    function wordProblem() {
+      const templates = [
+        () => {
+          const f1 = randomFraction();
+          const f2 = randomFraction();
+          const expr = `${f1.n}/${f1.d} + ${f2.n}/${f2.d}`;
+          const text = `Sarah has ${f1.n}/${f1.d} of a pie. She gets another ${f2.n}/${f2.d}. How much pie does she have now?`;
+          return { text, answer: evalExpression(expr) };
+        },
+        () => {
+          const base = Math.floor(Math.random() * 8) + 2;
+          const exp = Math.floor(Math.random() * 3) + 2;
+          const expr = `${base}^${exp}`;
+          const text = `A machine multiplies numbers by ${base}^${exp}. What is the result?`;
+          return { text, answer: evalExpression(expr) };
+        },
+        () => {
+          const f = randomFraction();
+          const w = Math.floor(Math.random() * 5) + 1;
+          const expr = `${w} + ${f.n}/${f.d}`;
+          const text = `Tom walks ${w} miles, then walks another ${f.n}/${f.d} miles. How far did he walk total?`;
+          return { text, answer: evalExpression(expr) };
+        }
+      ];
+
+      return templates[Math.floor(Math.random() * templates.length)]();
+    }
+
+    function getSelectedTypes() {
+      const boxes = document.querySelectorAll(".qType");
+      const selected = [];
+      boxes.forEach(b => {
+        if (b.checked) selected.push(b.value);
+      });
+      return selected.length ? selected : ["whole"];
+    }
+
+    function newQuestion() {
+      const types = getSelectedTypes();
+      const type = types[Math.floor(Math.random() * types.length)];
+
+      let questionText = "";
+
+      if (type === "wordProblem") {
+        const wp = wordProblem();
+        questionText = wp.text;
+        currentAnswer = wp.answer;
+      }
+
+      else if (type === "whole") {
+        const a = Math.floor(Math.random() * 10) + 1;
+        const b = Math.floor(Math.random() * 10) + 1;
+        const ops = ["+", "-", "*"];
+        const op = ops[Math.floor(Math.random() * ops.length)];
+
+        questionText = `${a} ${op} ${b}`;
+        currentAnswer =
+          op === "+" ? a + b :
+          op === "-" ? a - b :
+          a * b;
+      }
+
+      else if (type === "fraction") {
+        const n1 = Math.floor(Math.random() * 9) + 1;
+        const d1 = Math.floor(Math.random() * 9) + 1;
+        const n2 = Math.floor(Math.random() * 9) + 1;
+        const d2 = Math.floor(Math.random() * 9) + 1;
+
+        const ops = ["+", "-"];
+        const op = ops[Math.floor(Math.random() * ops.length)];
+
+        questionText = `${n1}/${d1} ${op} ${n2}/${d2}`;
+
+        let num, den;
+
+        if (op === "+") {
+          num = n1 * d2 + n2 * d1;
+          den = d1 * d2;
+        } else {
+          num = n1 * d2 - n2 * d1;
+          den = d1 * d2;
+        }
+
+        currentAnswer = simplifyFraction(num, den);
+      }
+
+      else if (type === "exponent") {
+        const exponent = Math.floor(Math.random() * 3) + 2;
+        const base = Math.floor(Math.random() * 9) + 2;
+
+        questionText = `${base}^${exponent}`;
+        currentAnswer = base ** exponent;
+      }
+
+      else if (type === "fractionExponent") {
+        const f = randomFraction();
+        const exponent = Math.floor(Math.random() * 3) + 2;
+
+        questionText = `(${f.n}/${f.d})^${exponent}`;
+        currentAnswer = exponentFraction(f.n, f.d, exponent);
+      }
+
+      else if (type === "multiStep") {
+        const f1 = randomFraction();
+        const f2 = randomFraction();
+        const base = Math.floor(Math.random() * 8) + 2;
+        const exp = Math.floor(Math.random() * 3) + 2;
+
+        const expr = `${f1.n}/${f1.d} + (${f2.n}/${f2.d})^${exp}`;
+        questionText = `${f1.n}/${f1.d} + (${f2.n}/${f2.d})^${exp}`;
+        currentAnswer = evalExpression(expr);
+      }
+
+      questionEl.textContent = questionText + " = ?";
+      answerEl.value = "";
+      feedbackEl.textContent = "";
+    }
+
+    // CLEAN normalizeInput: decimals → fractions, mixed numbers simplified
+    function normalizeInput(input) {
+      input = input.trim();
+
+      if (input.includes(" ")) {
+        const [whole, frac] = input.split(" ");
+        const [n, d] = frac.split("/").map(Number);
+        return simplifyFraction(whole * d + n, d);
+      }
+
+      if (input.includes("/")) {
+        const [n, d] = input.split("/").map(Number);
+        return simplifyFraction(n, d);
+      }
+
+      if (input.includes(".")) {
+        const decimals = input.split(".")[1].length;
+        const denominator = Math.pow(10, decimals);
+        const numerator = Math.round(parseFloat(input) * denominator);
+        return simplifyFraction(numerator, denominator);
+      }
+
+      return input;
+    }
+
+    submitBtn.addEventListener("click", () => {
+      if (answerEl.value === "") {
+        feedbackEl.textContent = "Type an answer first.";
+        feedbackEl.className = "wrong";
+        return;
+      }
+
+      const userAnswer = normalizeInput(answerEl.value);
+
+      if (userAnswer == currentAnswer) {
+        feedbackEl.textContent = "Correct!";
+        feedbackEl.className = "correct";
+        score++;
+      } else {
+        feedbackEl.textContent = `Wrong! Correct answer: ${currentAnswer}`;
+        feedbackEl.className = "wrong";
+      }
+
+      scoreEl.textContent = score;
+      setTimeout(newQuestion, 900);
+    });
+
+    newQuestion();
+  </script>
+</body>
+</html>
