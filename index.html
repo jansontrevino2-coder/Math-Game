@@ -39,6 +39,14 @@
       cursor: pointer;
     }
 
+    #warn {
+      color: #ff5252;
+      font-size: 13px;
+      display: none;
+      margin-top: 5px;
+      text-align: center;
+    }
+
     .game {
       background: #1e1e1e;
       padding: 20px 30px;
@@ -130,6 +138,8 @@
     <label><input type="checkbox" class="qType" value="fractionExponent" checked> Fraction Exponents</label>
     <label><input type="checkbox" class="qType" value="multiStep" checked> Multi-Step Problems</label>
     <label><input type="checkbox" class="qType" value="wordProblem" checked> Word Problems</label>
+
+    <div id="warn">At least one type must be selected.</div>
   </div>
 
   <!-- GAME PANEL -->
@@ -147,8 +157,7 @@
       <strong>How to type answers:</strong><br><br>
       • Fractions: <code>3/4</code><br>
       • Mixed numbers: <code>1 1/2</code><br>
-      • Whole numbers: <code>5</code><br>
-      • Decimals: <code>0.5</code> (will be turned into a fraction)<br>
+      • Decimals: <code>0.5</code> (auto-converted)<br>
       • Word problems: type the final number or fraction<br>
     </div>
 
@@ -166,12 +175,25 @@
     const helpBox = document.getElementById('helpBox');
     const feedbackEl = document.getElementById('feedback');
     const scoreEl = document.getElementById('score');
+    const warnEl = document.getElementById('warn');
 
     let currentAnswer = "";
     let score = 0;
 
     helpBtn.addEventListener("click", () => {
       helpBox.style.display = helpBox.style.display === "none" ? "block" : "none";
+    });
+
+    // Prevent unchecking all boxes
+    document.querySelectorAll(".qType").forEach(box => {
+      box.addEventListener("change", () => {
+        const checked = document.querySelectorAll(".qType:checked");
+        if (checked.length === 0) {
+          box.checked = true;
+          warnEl.style.display = "block";
+          setTimeout(() => warnEl.style.display = "none", 1200);
+        }
+      });
     });
 
     function gcd(a, b) {
@@ -204,7 +226,6 @@
       return { n, d };
     }
 
-    // CLEAN evalExpression: avoids ugly floating-point answers
     function evalExpression(expr) {
       expr = expr.replace(/(\d+)\/(\d+)/g, "($1/$2)");
       expr = expr.replace(/(\d+)\^(\d+)/g, "Math.pow($1,$2)");
@@ -257,12 +278,10 @@
     }
 
     function getSelectedTypes() {
-      const boxes = document.querySelectorAll(".qType");
+      const boxes = document.querySelectorAll(".qType:checked");
       const selected = [];
-      boxes.forEach(b => {
-        if (b.checked) selected.push(b.value);
-      });
-      return selected.length ? selected : ["whole"];
+      boxes.forEach(b => selected.push(b.value));
+      return selected;
     }
 
     function newQuestion() {
@@ -346,7 +365,6 @@
       feedbackEl.textContent = "";
     }
 
-    // CLEAN normalizeInput: decimals → fractions, mixed numbers simplified
     function normalizeInput(input) {
       input = input.trim();
 
