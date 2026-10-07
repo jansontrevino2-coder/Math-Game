@@ -124,6 +124,13 @@
       text-align: left;
       box-shadow: 0 0 10px rgba(0,0,0,0.5);
     }
+
+    #inputWarn {
+      color: #ff5252;
+      font-size: 13px;
+      display: none;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
@@ -148,18 +155,20 @@
     <div class="question" id="question">Loading...</div>
 
     <input type="text" id="answer" placeholder="Answer" />
+    <div id="inputWarn">Only numbers and math symbols allowed.</div>
     <br>
 
     <button id="submitBtn">Submit</button>
     <button id="helpBtn">Help</button>
 
     <div id="helpBox">
-      <strong>Help:</strong><br><br>
+      <strong>Help!</strong><br><br>
       • Fractions: <code>3/4</code><br>
       • Mixed numbers: <code>1 1/2</code><br>
       • Decimals: <code>0.5</code> (auto-converted)<br>
       • Word problems: type the final number or fraction<br>
       • <code>^</code> means “to the power of”<br>
+      • Letters are NOT allowed<br>
     </div>
 
     <div class="info">
@@ -181,6 +190,7 @@
     const incorrectEl = document.getElementById('incorrectCount');
     const accuracyEl = document.getElementById('accuracy');
     const warnEl = document.getElementById('warn');
+    const inputWarn = document.getElementById('inputWarn');
 
     let currentAnswer = "";
     let correctCount = 0;
@@ -200,6 +210,17 @@
           setTimeout(() => warnEl.style.display = "none", 1200);
         }
       });
+    });
+
+    // BLOCK LETTERS
+    answerEl.addEventListener("input", () => {
+      const value = answerEl.value;
+
+      if (/[a-zA-Z]/.test(value)) {
+        inputWarn.style.display = "block";
+        answerEl.value = value.replace(/[a-zA-Z]/g, "");
+        setTimeout(() => inputWarn.style.display = "none", 1200);
+      }
     });
 
     function updateAccuracy() {
